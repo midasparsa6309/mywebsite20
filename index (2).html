@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Vazir:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>مديريت جداول 8x8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes allahuakbar {
+            0% {
+                opacity: 0;
+                transform: translateY(0px) scale(0.5) rotate(0deg);
+            }
+            20% {
+                opacity: 1;
+                transform: translateY(-15px) scale(1.2) rotate(180deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-40px) scale(1.1) rotate(360deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) scale(0.9) rotate(720deg);
+            }
+        }
+        .allahuakbar {
+            animation: allahuakbar 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+            pointer-events: none !important;
+            user-select: none !important;
+            z-index: 9999 !important;
+        }
+        #dataTable {
+            border-spacing: 0.5rem;
+            border-collapse: separate;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-purple-100 min-h-screen p-4 md:p-6 lg:p-8 antialiased" style="font-family: 'Vazir', sans-serif;">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-black mb-16 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-2xl shadow-2xl">مديريت جداول 8x8 ?</h1>
+        
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
+            <!-- Sidebar for table list -->
+            <div class="w-full lg:w-80 bg-gradient-to-b from-white to-slate-50 p-8 rounded-3xl shadow-2xl ring-1 ring-indigo-100/50 sticky top-12 max-h-screen h-fit hover:shadow-3xl transition-all duration-500 backdrop-blur-sm">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">جداول ذخيره‌شده</h2>
+                <ul id="tableList" class="space-y-2 max-h-96 overflow-y-auto mb-6">
+                    <!-- Populated by JS -->
+                </ul>
+                <button id="newTable" class="w-full group bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-4 px-6 rounded-2xl shadow-xl hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-400/50 transform hover:scale-105 active:scale-95 transition-all duration-300 text-lg">
+                    جدول جديد ?
+                </button>
+            </div>
+            
+            <!-- Main table area -->
+            <div class="w-full lg:flex-1">
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 lg:p-12 ring-2 ring-indigo-200/50 hover:shadow-3xl hover:ring-indigo-300/50 transition-all duration-500 border-0">
+                    <div id="tableContainer" class="overflow-x-auto">
+                        <table id="dataTable" class="w-full border-collapse text-sm">
+                            <!-- Rows populated by JS -->
+                        </table>
+                    </div>
+                    <p id="status" class="mt-8 text-base font-semibold px-6 py-3 bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600 text-white rounded-full shadow-xl ring-2 ring-emerald-200/50 backdrop-blur-md hidden scale-95">تغييرات ذخيره شد! ?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let tables = JSON.parse(localStorage.getItem('tables')) || [];
+        let currentTableId = localStorage.getItem('currentTableId') || null;
+
+        function createEmptyData() {
+            const data = Array.from({length: 8}, () => Array(8).fill(''));
+            // Fill header row as specified
+            data[0][0] = 'نام';
+            data[0][1] = 'ژيکان شخصي';
+            data[0][2] = 'سامان فقه مجيدي';
+            data[0][3] = 'ايهان ملايي';
+            data[0][4] = 'بهنام عليزاده';
+            data[0][5] = 'اريا محمدي';
+            data[0][6] = 'ميران شيخي';
+            data[0][7] = ''; // Extra empty
+            return data;
+        }
+
+        function initTable() {
+            const table = document.getElementById('dataTable');
+            table.innerHTML = '';
+            const activeTable = tables.find(t => t.id === currentTableId);
+            const data = activeTable ? activeTable.data : createEmptyData();
+
+            for (let row = 0; row < 8; row++) {
+                const tr = document.createElement('tr');
+                tr.className = 'group transition-all duration-300 hover:bg-gradient-to-l hover:from-indigo-100/60 hover:to-purple-100/60 hover:shadow-2xl hover:scale-[1.005]';
+                for (let col = 0; col < 8; col++) {
+                    const td = document.createElement('td');
+                    td.className = 'relative border border-indigo-200/50 p-4 min-h-[70px] align-top focus:outline-none focus:ring-4 focus:ring-indigo-400/50 focus:border-indigo-400 focus:shadow-xl transition-all duration-300 hover:bg-gradient-to-br hover:from-indigo-50/70 hover:to-purple-50/70 hover:shadow-md shadow-sm bg-white/70 backdrop-blur-sm rounded-lg hover:scale-[1.02] active:scale-[0.98] text-gray-800 font-medium';
+                    td.contentEditable = true;
+                    td.textContent = data[row][col] || '';
+                    td.addEventListener('input', debounce(saveCurrentTable, 500));
+                    td.addEventListener('click', (e) => showAllahuAkbar(e.pageX, e.pageY));
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+            updateTableList();
+            document.getElementById('status').classList.add('hidden');
+        }
+
+        function saveCurrentTable() {
+            const table = document.getElementById('dataTable');
+            const rows = table.querySelectorAll('tr');
+            const data = Array.from(rows).map(row =>
+                Array.from(row.querySelectorAll('td')).map(td => td.textContent || '')
+            );
+
+            if (!currentTableId) {
+                // Create new table
+                currentTableId = Date.now().toString();
+                tables.unshift({ id: currentTableId, data }); // Add to front for recent-first
+            } else {
+                // Update existing
+                const idx = tables.findIndex(t => t.id === currentTableId);
+                if (idx !== -1) {
+                    tables[idx].data = data;
+                }
+            }
+
+            localStorage.setItem('tables', JSON.stringify(tables.slice(0, 20))); // Limit to 20 to avoid bloat
+            localStorage.setItem('currentTableId', currentTableId);
+            const statusEl = document.getElementById('status');
+            statusEl.classList.remove('hidden', 'scale-95');
+            statusEl.classList.add('animate-bounce', 'scale-100');
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+                statusEl.classList.remove('animate-bounce');
+            }, 3500);
+        }
+
+        function debounce(func, delay) {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(null, args), delay);
+            };
+        }
+
+        function showAllahuAkbar(x, y) {
+            const div = document.createElement('div');
+            div.textContent = 'الله اکبر';
+            div.className = 'allahuakbar fixed text-xl md:text-2xl lg:text-3xl font-black text-emerald-500 drop-shadow-2xl shadow-2xl';
+            div.style.left = `${x - 50}px`;
+            div.style.top = `${y - 25}px`;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 2500);
+        }
+
+        function updateTableList() {
+            const list = document.getElementById('tableList');
+            list.innerHTML = '';
+            if (tables.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'p-3 text-gray-500 italic text-center';
+                li.textContent = 'هيچ جدولي ذخيره نشده';
+                list.appendChild(li);
+                return;
+            }
+            tables.forEach((table, idx) => {
+                const li = document.createElement('li');
+                const isActive = table.id === currentTableId;
+                const tableName = table.data[0]?.[0]?.trim() || `جدول ${idx + 1}`;
+                const dateStr = new Date(parseInt(table.id)).toLocaleDateString('fa-IR');
+                li.className = `group p-4 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] backdrop-blur-sm ${
+                    isActive
+                        ? 'bg-gradient-to-r from-blue-100 to-indigo-200 shadow-md ring-4 ring-blue-200/50 border-2 border-blue-400 text-blue-900 font-bold scale-105'
+                        : 'bg-white/70 hover:bg-gradient-to-r hover:from-gray-100 hover:to-slate-200 shadow-sm border border-gray-200/50 text-gray-800 hover:text-gray-900'
+                }`;
+                li.textContent = `${tableName} - ${dateStr}`;
+                li.onclick = (e) => {
+                    loadTable(table.id);
+                    showAllahuAkbar(e.pageX, e.pageY);
+                };
+                list.appendChild(li);
+            });
+        }
+
+        function loadTable(id) {
+            currentTableId = id;
+            localStorage.setItem('currentTableId', id);
+            initTable();
+        }
+
+        function newTable() {
+            currentTableId = null;
+            localStorage.removeItem('currentTableId');
+            initTable();
+        }
+
+        // Event listeners
+        document.getElementById('newTable').addEventListener('click', (e) => {
+            newTable();
+            showAllahuAkbar(e.pageX, e.pageY);
+        });
+
+        // Initialize on load
+        initTable();
+    </script>
+</body>
+</html>
